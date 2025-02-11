@@ -37,7 +37,7 @@ def get_total_members():
     """Fetches the total number of members from the database."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM members")
+    cursor.execute("SELECT COUNT(*) FROM gym_users")
     total_members = cursor.fetchone()[0]
     conn.close()
     return total_members
