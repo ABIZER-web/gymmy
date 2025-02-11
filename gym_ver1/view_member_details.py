@@ -1,109 +1,178 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import subprocess
-from db_helper import get_db_connection  # Import helper function for DB connection
+from datetime import datetime
+from db_helper import get_db_connection  # Import database helper
 
-def sign_out():
-    """Closes the dashboard and reopens the login page"""
-    root.destroy()  # Close Dashboard
-    subprocess.Popen(["python", "login_page.py"])  # Open Login Page
+# Function to calculate remaining days for a membership
+def calculate_remaining_days(expiry_date):
+    if not expiry_date:
+        return "No expiry date set"
+    try:
+        expiry = datetime.strptime(expiry_date, "%Y-%m-%d")
+        today = datetime.today()
+        remaining_days = (expiry - today).days
+        return remaining_days if remaining_days >= 0 else "Expired"
+    except ValueError:
+        return "Invalid date format"
 
-def open_register_member():
-    subprocess.Popen(["python", "Register_Member.py"])  # Open Register_Member file
-
-def open_view_member_details():
-    subprocess.Popen(["python", "view_member_details.py"])  # Open view_member_details file
-
-def membership_plans():
-    messagebox.showinfo("Membership Plans", "Available Plans:\n- Monthly\n- Quarterly\n- Yearly")
-
-def initialize_database():
-    """Ensures the members table exists in the database."""
+# Function to show member details in a new window
+def show_member_info(member_id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS members (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            phone TEXT NOT NULL UNIQUE,
-            membership_type TEXT NOT NULL
-        )
-    """)
-    conn.commit()
+    cursor.execute("SELECT * FROM gym_users WHERE id=?", (member_id,))
+    member = cursor.fetchone()
     conn.close()
 
-def get_total_members():
-    """Fetches the total number of members from the database."""
+    if not member:
+        messagebox.showerror("Error", "Member not found!")
+        return
+
+    info_window = tk.Toplevel()
+    info_window.title("Member Information")
+    info_window.geometry("500x600")
+    info_window.configure(bg="black")
+
+    frame = tk.Frame(info_window, padx=20, pady=20, bg="black")
+    frame.pack(pady=10)
+
+    fields = ["ID", "Name", "Age", "Gender", "Address", "Phone Number", "Membership Plan", 
+              "Amount", "Amount Due", "Registration Date", "Membership Expiry"]
+
+    for i, field in enumerate(fields):
+        tk.Label(frame, text=field, fg="white", bg="black", font=("Arial", 12)).grid(row=i, column=0, sticky=tk.W, pady=10, padx=10)
+        tk.Label(frame, text=member[i], fg="white", bg="black", font=("Arial", 12)).grid(row=i, column=1, pady=10, padx=10)
+
+    back_button = ttk.Button(info_window, text="Back", command=info_window.destroy)
+    back_button.pack(pady=20)
+
+# Function to fetch members from the database
+def fetch_members(search_query=None, filter_option="All"):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM members")
-    total_members = cursor.fetchone()[0]
+    query = "SELECT id, name, phone_number, membership_plan, registration_date, membership_expiry FROM gym_users"
+    
+    conditions = []
+    params = []
+
+    if search_query:
+        conditions.append("(name LIKE ? OR phone_number LIKE ?)")
+        params.extend([f"%{search_query}%", f"%{search_query}%"])
+
+    if filter_option == "Expired Memberships":
+        conditions.append("(membership_expiry <= date('now'))")
+    elif filter_option == "Active Members":
+        conditions.append("(membership_expiry > date('now'))")
+    elif filter_option not in ["All", "Expired Memberships", "Active Members"]:
+        conditions.append("(membership_plan = ?)")
+        params.append(filter_option)
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    cursor.execute(query, tuple(params))
+    members = cursor.fetchall()
     conn.close()
-    return total_members
+    return members
 
-def update_total_members_label():
-    """Updates the total members label with the current count."""
-    total_members = get_total_members()
-    members_label.config(text=f"Total Members: {total_members}")
-    root.after(10000, update_total_members_label)  # Update every 10 seconds
+# Function to update the displayed member list
+def update_member_list(event=None):
+    search_query = search_entry.get()
+    filter_option = filter_var.get()
+    members = fetch_members(search_query, filter_option)
+    
+    for widget in member_frame.winfo_children():
+        widget.destroy()
+    
+    row = 0
+    col = 0
+    for member in members:
+        member_id, name, phone, membership_plan, registration_date, membership_expiry = member
+        remaining_days = calculate_remaining_days(membership_expiry)
+        
+        # Stylish Card
+        card_frame = tk.Frame(member_frame, bg="#f8f9fa", padx=10, pady=10, relief=tk.RIDGE, bd=2, width=250, height=220)
+        card_frame.grid(row=row, column=col, padx=10, pady=10)
+        card_frame.pack_propagate(False)
 
-def run_dashboard():
-    """Function to initialize and run the Gym Dashboard"""
-    global root, members_label
-    root = tk.Tk()
-    root.title("Gym Management Dashboard")
-    root.geometry("800x500")
-    root.configure(bg="#1c1c1c")
+        # Name Banner (Like a Board)
+        name_banner = tk.Label(card_frame, text=name, font=("Arial", 12, "bold"), bg="#007BFF", fg="white", pady=5)
+        name_banner.pack(fill="x", pady=(0, 5))
 
-    # Sidebar Frame
-    sidebar = tk.Frame(root, bg="#2b2b2b", width=200, height=500)
-    sidebar.pack(side=tk.LEFT, fill=tk.Y)
+        # Member Details
+        tk.Label(card_frame, text=f"Phone: {phone}", font=("Arial", 10), bg="white").pack(anchor='w')
+        tk.Label(card_frame, text=f"Plan: {membership_plan}", font=("Arial", 10), bg="white").pack(anchor='w')
+        tk.Label(card_frame, text=f"Expiry: {membership_expiry}\n({remaining_days} days left)", font=("Arial", 10), bg="white").pack(anchor='w')
 
-    # Gym Logo
-    logo_label = tk.Label(sidebar, text="🏋️ Olympia Gym", font=("Arial", 12, "bold"), bg="#2b2b2b", fg="white")
-    logo_label.pack(pady=10)
+        # Button Frame
+        button_frame = tk.Frame(card_frame, bg="white")
+        button_frame.pack(pady=5)
 
-    # Buttons
-    register_btn = tk.Button(sidebar, text="Register Member +", command=open_register_member, bg="#4CAF50", fg="white", font=("Arial", 10, "bold"))
-    register_btn.pack(pady=10, padx=10, fill=tk.X)
+        # Send Receipt Button
+        receipt_button = tk.Button(button_frame, text="Send Receipt", bg="#2CA02C", fg="white", width=12, font=("Arial", 10))
+        receipt_button.grid(row=0, column=0, padx=5)
 
-    view_btn = tk.Button(sidebar, text="View Member Details", command=open_view_member_details, bg="#2196F3", fg="white", font=("Arial", 10, "bold"))
-    view_btn.pack(pady=10, padx=10, fill=tk.X)
+        # Renew Membership Button
+        renew_button = tk.Button(button_frame, text="Renew Plan", bg="#FF5733", fg="white", width=12, font=("Arial", 10))
+        renew_button.grid(row=0, column=1, padx=5)
 
-    membership_btn = tk.Button(sidebar, text="Membership Plans", command=membership_plans, bg="#FF9800", fg="white", font=("Arial", 10, "bold"))
-    membership_btn.pack(pady=10, padx=10, fill=tk.X)
+        # Bind click event to show member info
+        card_frame.bind("<Button-1>", lambda e, member_id=member_id: show_member_info(member_id))
+        
+        col += 1
+        if col > 2:  # Adjust to fit 3 boxes in a row
+            col = 0
+            row += 1
 
-    # Sign Out Button
-    signout_btn = tk.Button(sidebar, text="Sign Out 🚪", command=sign_out, bg="#F44336", fg="white", font=("Arial", 10, "bold"))
-    signout_btn.pack(pady=20, padx=10, fill=tk.X)
+# Main application window
+root = tk.Tk()
+root.title("Member Details")
+root.geometry("900x600")
+root.configure(bg="black")
 
-    # Dashboard Header
-    header = tk.Frame(root, bg="#2b2b2b", height=50)
-    header.pack(fill=tk.X)
+header_frame = tk.Frame(root, bg="gray", pady=10)
+header_frame.pack(fill=tk.X)
+tk.Label(header_frame, text="Member Details", font=("Arial", 16, "bold"), bg="gray", fg="white").pack()
 
-    dashboard_label = tk.Label(header, text="Dashboard", font=("Arial", 14, "bold"), bg="#2b2b2b", fg="white")
-    dashboard_label.pack(side=tk.LEFT, padx=20)
+search_frame = tk.Frame(root, bg="black", pady=10)
+search_frame.pack(fill=tk.X, padx=10)
 
-    gmail_label = tk.Label(header, text="📧 owner@gmail.com", font=("Arial", 10), bg="#2b2b2b", fg="white")
-    gmail_label.pack(side=tk.RIGHT, padx=20)
+# Search Label
+tk.Label(search_frame, text="Search:", fg="white", bg="black", font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
 
-    # Dashboard Content
-    content = tk.Frame(root, bg="#1c1c1c")
-    content.pack(expand=True, fill=tk.BOTH)
+# Search Entry
+search_entry = tk.Entry(search_frame, font=("Arial", 12))
+search_entry.pack(side=tk.LEFT, padx=10)
+search_entry.bind("<KeyRelease>", update_member_list)
 
-    members_label = tk.Label(content, text="", font=("Arial", 12), bg="gray", fg="white", width=30, height=5)
-    members_label.pack(pady=20)
+# Filter Dropdown
+filter_var = tk.StringVar()
+filter_var.set("All")  # Default selection
 
-    # Initialize database table
-    initialize_database()
+filter_options = ["All", "Expired Memberships", "Active Members", "Monthly", "Quarterly", "Yearly"]
+filter_dropdown = ttk.Combobox(search_frame, textvariable=filter_var, values=filter_options, state="readonly", font=("Arial", 12), width=18)
+filter_dropdown.pack(side=tk.LEFT, padx=10)
+filter_dropdown.bind("<<ComboboxSelected>>", update_member_list)
 
-    # Update total members label initially and then periodically
-    update_total_members_label()
+# Scrollable Member Frame
+canvas = tk.Canvas(root, bg="black")
+scrollbar = tk.Scrollbar(root, orient=tk.VERTICAL, command=canvas.yview)
+scrollable_frame = tk.Frame(canvas, bg="black")
 
-    # Run Tkinter Event Loop
-    root.mainloop()
+scrollable_frame.bind(
+    "<Configure>",
+    lambda e: canvas.configure(
+        scrollregion=canvas.bbox("all")
+    )
+)
 
-# Ensure Dashboard only runs when this script is executed directly
-if __name__ == "__main__":
-    run_dashboard()
+canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+canvas.configure(yscrollcommand=scrollbar.set)
+
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+member_frame = tk.Frame(scrollable_frame, bg="black")
+member_frame.pack(fill=tk.BOTH, expand=True)
+
+update_member_list()
+root.mainloop()
