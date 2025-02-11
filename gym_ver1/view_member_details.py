@@ -1,100 +1,109 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
-from datetime import datetime
-from db_helper import get_db_connection  # Import database helper
+import subprocess
+from db_helper import get_db_connection  # Import helper function for DB connection
 
-# Function to calculate remaining days for a membership
-def calculate_remaining_days(expiry_date):
-    if not expiry_date:
-        return "No expiry date set"
-    try:
-        expiry = datetime.strptime(expiry_date, "%Y-%m-%d")
-        today = datetime.today()
-        remaining_days = (expiry - today).days
-        return remaining_days if remaining_days >= 0 else "Expired"
-    except ValueError:
-        return "Invalid date format"
+def sign_out():
+    """Closes the dashboard and reopens the login page"""
+    root.destroy()  # Close Dashboard
+    subprocess.Popen(["python", "login_page.py"])  # Open Login Page
 
-# Function to show member details in a new window
-def show_member_info(member_id):
+def open_register_member():
+    subprocess.Popen(["python", "Register_Member.py"])  # Open Register_Member file
+
+def open_view_member_details():
+    subprocess.Popen(["python", "view_member_details.py"])  # Open view_member_details file
+
+def membership_plans():
+    messagebox.showinfo("Membership Plans", "Available Plans:\n- Monthly\n- Quarterly\n- Yearly")
+
+def initialize_database():
+    """Ensures the members table exists in the database."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM gym_users WHERE id=?", (member_id,))
-    member = cursor.fetchone()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS members (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            phone TEXT NOT NULL UNIQUE,
+            membership_type TEXT NOT NULL
+        )
+    """)
+    conn.commit()
     conn.close()
-    if not member:
-        messagebox.showerror("Error", "Member not found!")
-        return
-    info_window = tk.Toplevel()
-    info_window.title("Member Information")
-    info_window.geometry("500x600")
-    info_window.configure(bg="black")
-    frame = tk.Frame(info_window, padx=20, pady=20, bg="black")
-    frame.pack(pady=10)
-    fields = ["ID", "Name", "Age", "Gender", "Address", "Phone Number", "Membership Plan", 
-              "Amount", "Amount Due", "Registration Date", "Membership Expiry"]
-    for i, field in enumerate(fields):
-        tk.Label(frame, text=field, fg="white", bg="black", font=("Arial", 12)).grid(row=i, column=0, sticky=tk.W, pady=10, padx=10)
-        tk.Label(frame, text=member[i], fg="white", bg="black", font=("Arial", 12)).grid(row=i, column=1, pady=10, padx=10)
-    back_button = ttk.Button(info_window, text="Back", command=info_window.destroy)
-    back_button.pack(pady=20)
 
-# Function to fetch members from the database
-def fetch_members(search_query=None):
+def get_total_members():
+    """Fetches the total number of members from the database."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    query = "SELECT id, name, phone_number, membership_plan, registration_date, membership_expiry FROM gym_users"
-    
-    if search_query:
-        query += " WHERE name LIKE ? OR phone_number LIKE ?"
-        cursor.execute(query, (f"%{search_query}%", f"%{search_query}%"))
-    else:
-        cursor.execute(query)
-    
-    members = cursor.fetchall()
+    cursor.execute("SELECT COUNT(*) FROM members")
+    total_members = cursor.fetchone()[0]
     conn.close()
-    return members
+    return total_members
 
-# Function to update the displayed member list
-def update_member_list(event=None):
-    search_query = search_entry.get()
-    members = fetch_members(search_query)
-    
-    for widget in member_frame.winfo_children():
-        widget.destroy()
-    
-    row, col = 0, 0
-    for member in members:
-        member_id, name, phone, membership_plan, registration_date, membership_expiry = member
-        remaining_days = calculate_remaining_days(membership_expiry)
-        
-        card_frame = tk.Frame(member_frame, bg="white", padx=5, pady=5, relief=tk.RIDGE, bd=2, width=180, height=150)
-        card_frame.grid(row=row, column=col, padx=5, pady=5)
-        card_frame.pack_propagate(False)
+def update_total_members_label():
+    """Updates the total members label with the current count."""
+    total_members = get_total_members()
+    members_label.config(text=f"Total Members: {total_members}")
+    root.after(10000, update_total_members_label)  # Update every 10 seconds
 
-        tk.Label(card_frame, text=f"Name: {name}", font=("Arial", 10), bg="white").pack(anchor='w')
-        tk.Label(card_frame, text=f"Phone: {phone}", font=("Arial", 10), bg="white").pack(anchor='w')
-        tk.Label(card_frame, text=f"Plan: {membership_plan}", font=("Arial", 10), bg="white").pack(anchor='w')
-        tk.Label(card_frame, text=f"Expiry: {membership_expiry}\n({remaining_days} days left)", font=("Arial", 10), bg="white").pack(anchor='w')
-        
-        card_frame.bind("<Button-1>", lambda e, member_id=member_id: show_member_info(member_id))
-        
-        col += 1
-        if col > 3:
-            col = 0
-            row += 1
+def run_dashboard():
+    """Function to initialize and run the Gym Dashboard"""
+    global root, members_label
+    root = tk.Tk()
+    root.title("Gym Management Dashboard")
+    root.geometry("800x500")
+    root.configure(bg="#1c1c1c")
 
-# Main application window
-root = tk.Tk()
-root.title("Member Details")
-root.geometry("800x600")
-root.configure(bg="black")
+    # Sidebar Frame
+    sidebar = tk.Frame(root, bg="#2b2b2b", width=200, height=500)
+    sidebar.pack(side=tk.LEFT, fill=tk.Y)
 
-header_frame = tk.Frame(root, bg="gray", pady=10)
-header_frame.pack(fill=tk.X)
-tk.Label(header_frame, text="Member Details", font=("Arial", 16, "bold"), bg="gray", fg="white").pack()
+    # Gym Logo
+    logo_label = tk.Label(sidebar, text="🏋️ Olympia Gym", font=("Arial", 12, "bold"), bg="#2b2b2b", fg="white")
+    logo_label.pack(pady=10)
 
-search_frame = tk.Frame(root, bg="black", pady=10)
-search_frame.pack(fill=tk.X, padx=10)
-tk.Label(search_frame, text="Search by Name or Phone:", fg="white", bg="black", font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
+    # Buttons
+    register_btn = tk.Button(sidebar, text="Register Member +", command=open_register_member, bg="#4CAF50", fg="white", font=("Arial", 10, "bold"))
+    register_btn.pack(pady=10, padx=10, fill=tk.X)
+
+    view_btn = tk.Button(sidebar, text="View Member Details", command=open_view_member_details, bg="#2196F3", fg="white", font=("Arial", 10, "bold"))
+    view_btn.pack(pady=10, padx=10, fill=tk.X)
+
+    membership_btn = tk.Button(sidebar, text="Membership Plans", command=membership_plans, bg="#FF9800", fg="white", font=("Arial", 10, "bold"))
+    membership_btn.pack(pady=10, padx=10, fill=tk.X)
+
+    # Sign Out Button
+    signout_btn = tk.Button(sidebar, text="Sign Out 🚪", command=sign_out, bg="#F44336", fg="white", font=("Arial", 10, "bold"))
+    signout_btn.pack(pady=20, padx=10, fill=tk.X)
+
+    # Dashboard Header
+    header = tk.Frame(root, bg="#2b2b2b", height=50)
+    header.pack(fill=tk.X)
+
+    dashboard_label = tk.Label(header, text="Dashboard", font=("Arial", 14, "bold"), bg="#2b2b2b", fg="white")
+    dashboard_label.pack(side=tk.LEFT, padx=20)
+
+    gmail_label = tk.Label(header, text="📧 owner@gmail.com", font=("Arial", 10), bg="#2b2b2b", fg="white")
+    gmail_label.pack(side=tk.RIGHT, padx=20)
+
+    # Dashboard Content
+    content = tk.Frame(root, bg="#1c1c1c")
+    content.pack(expand=True, fill=tk.BOTH)
+
+    members_label = tk.Label(content, text="", font=("Arial", 12), bg="gray", fg="white", width=30, height=5)
+    members_label.pack(pady=20)
+
+    # Initialize database table
+    initialize_database()
+
+    # Update total members label initially and then periodically
+    update_total_members_label()
+
+    # Run Tkinter Event Loop
+    root.mainloop()
+
+# Ensure Dashboard only runs when this script is executed directly
+if __name__ == "__main__":
+    run_dashboard()
