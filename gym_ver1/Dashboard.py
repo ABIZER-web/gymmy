@@ -33,9 +33,24 @@ def initialize_database():
     conn.commit()
     conn.close()
 
+def get_total_members():
+    """Fetches the total number of members from the database."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM members")
+    total_members = cursor.fetchone()[0]
+    conn.close()
+    return total_members
+
+def update_total_members_label():
+    """Updates the total members label with the current count."""
+    total_members = get_total_members()
+    members_label.config(text=f"Total Members: {total_members}")
+    root.after(10000, update_total_members_label)  # Update every 10 seconds
+
 def run_dashboard():
     """Function to initialize and run the Gym Dashboard"""
-    global root
+    global root, members_label
     root = tk.Tk()
     root.title("Gym Management Dashboard")
     root.geometry("800x500")
@@ -77,11 +92,14 @@ def run_dashboard():
     content = tk.Frame(root, bg="#1c1c1c")
     content.pack(expand=True, fill=tk.BOTH)
 
-    members_label = tk.Label(content, text="Total Members", font=("Arial", 12), bg="gray", fg="white", width=20, height=5)
+    members_label = tk.Label(content, text="", font=("Arial", 12), bg="gray", fg="white", width=30, height=5)
     members_label.pack(pady=20)
 
     # Initialize database table
     initialize_database()
+
+    # Update total members label initially and then periodically
+    update_total_members_label()
 
     # Run Tkinter Event Loop
     root.mainloop()
