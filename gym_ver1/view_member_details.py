@@ -98,23 +98,3 @@ tk.Label(header_frame, text="Member Details", font=("Arial", 16, "bold"), bg="gr
 search_frame = tk.Frame(root, bg="black", pady=10)
 search_frame.pack(fill=tk.X, padx=10)
 tk.Label(search_frame, text="Search by Name or Phone:", fg="white", bg="black", font=("Arial", 12)).pack(side=tk.LEFT, padx=10)
-search_entry = tk.Entry(search_frame, font=("Arial", 12))
-search_entry.pack(side=tk.LEFT, padx=10)
-search_entry.bind("<KeyRelease>", update_member_list)
-
-canvas = tk.Canvas(root, bg="black")
-scrollbar = tk.Scrollbar(root, orient=tk.VERTICAL, command=canvas.yview)
-scrollable_frame = tk.Frame(canvas, bg="black")
-
-scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-canvas.configure(yscrollcommand=scrollbar.set)
-
-scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-member_frame = tk.Frame(scrollable_frame, bg="black")
-member_frame.pack(fill=tk.BOTH, expand=True)
-
-update_member_list()
-root.mainloop()
