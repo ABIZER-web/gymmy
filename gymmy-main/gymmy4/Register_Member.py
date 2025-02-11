@@ -146,9 +146,6 @@ clear_button.grid(row=0, column=1, padx=10, pady=10)
 clear_button.bind("<Enter>", lambda event: on_enter(clear_button, "#FF9F40"))
 clear_button.bind("<Leave>", lambda event: on_leave(clear_button, "#FF7F0E"))
 
-receipt_button = Button(frame_buttons, text="Send Receipt", bg="#2CA02C", fg="white", width=12, font=("Arial", 12))
-receipt_button.grid(row=0, column=2, padx=10, pady=10)
-receipt_button.bind("<Enter>", lambda event: on_enter(receipt_button, "#49C849"))
-receipt_button.bind("<Leave>", lambda event: on_leave(receipt_button, "#2CA02C"))
+
 
 root.mainloop()
