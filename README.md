@@ -1,1 +1,1 @@
-Gym Management App Made In Tkinter.
+Gym Management App Made In Python Tkinter.
