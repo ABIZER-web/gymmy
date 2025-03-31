@@ -6,21 +6,21 @@ from tkinter import colorchooser
 from configparser import ConfigParser
 from ttkbootstrap import *
 from ttkbootstrap.dialogs import Messagebox
-import os
-import os
-import sqlite3
 import ttkbootstrap as tb
+import os
+import os
 from tkinter import StringVar, messagebox
 from ttkbootstrap.constants import *
+from reportlab.lib.pagesizes import letter
 from datetime import datetime
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.graphics.shapes import Drawing, Line, String, Group, Rect
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFont
 from reportlab.graphics.shapes import Circle
-
+# Register a font
+registerFont(TTFont("Times", "Times.ttf"))  # Ensure "Times.ttf" is available on your system
 
 root = tb.Window(themename="superhero")
 root.title('Gym Management- TreeBase')
@@ -53,7 +53,7 @@ def query_database():
 
     for record in records:
         my_tree.insert(parent='', index='end', iid=count, text='', 
-                       values=(record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[7], record[8], record[9], record[10]), 
+                       values=(record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[7], record[8], record[9], record[10],record[11]), 
                        tags=('evenrow' if count % 2 == 0 else 'oddrow'))
         count += 1  # Increment counter
 
@@ -88,7 +88,7 @@ def show_expired():
     for record in records:
         my_tree.insert(parent='', index='end', iid=count, text='',
                        values=(record[0], record[1], record[2], record[3], record[4], 
-                               record[5], record[6], record[7], record[8], record[9], record[10]),
+                               record[5], record[6], record[7], record[8], record[9], record[10], record[11]),
                        tags=('evenrow' if count % 2 == 0 else 'oddrow'))
         count += 1
 
@@ -108,7 +108,7 @@ def show_due():
     for record in records:
         my_tree.insert(parent='', index='end', iid=count, text='',
                        values=(record[0], record[1], record[2], record[3], record[4], 
-                               record[5], record[6], record[7], record[8], record[9], record[10]),
+                               record[5], record[6], record[7], record[8], record[9], record[10], record[11]),
                        tags=('evenrow' if count % 2 == 0 else 'oddrow'))
         count += 1
 
@@ -146,7 +146,7 @@ def search_records():
 
     for record in records:
         my_tree.insert(parent='', index='end', iid=count, text='',
-                       values=(record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[7], record[8], record[9], record[10]),
+                       values=(record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[7], record[8], record[9], record[10],record[11]),
                        tags=('evenrow' if count % 2 == 0 else 'oddrow'))
         count += 1  # Increment counter
 
@@ -278,38 +278,31 @@ my_menu.add_cascade(label="Search", menu=search_menu)
 search_menu.add_command(label="Search", command=lookup_records)
 search_menu.add_separator()
 search_menu.add_command(label="Reset", command=query_database)
-
 # Direct menu options
 my_menu.add_command(label="Expired Memberships", command=lambda: filter_records("expired"))
 my_menu.add_command(label="Amount Due", command=lambda: filter_records("due"))
 my_menu.add_command(label="Reset", command=query_database)  # Reset to show all records
-
-
-
-
-data = [
-    ("John Elder", "30", 1, "123 Elder St.", "john@example.com", "555-1234", "2023-01-01", "Gold", 50, "2024-01-01", "Active"),
-    ("Mary Smith", "28", 2, "435 West Lookout", "mary@example.com", "555-5678", "2022-12-01", "Silver", 30, "2023-12-01", "Expired"),
-    ("Tim Tanaka", "35", 3, "246 Main St.", "tim@example.com", "555-8765", "2023-03-15", "Platinum", 0, "2025-03-15", "Active"),
-    ("Erin Erinton", "40", 4, "333 Top Way", "erin@example.com", "555-4321", "2021-07-10", "Gold", 75, "2024-07-10", "Active"),
-    ("Bob Bobberly", "29", 5, "876 Left St.", "bob@example.com", "555-1111", "2023-05-20", "Silver", 20, "2024-05-20", "Active"),
-    ("Steve Smith", "50", 6, "1234 Main St.", "steve@example.com", "555-2222", "2020-08-08", "Platinum", 0, "2025-08-08", "Active"),
-    ("Tina Browne", "27", 7, "654 Street Ave.", "tina@example.com", "555-3333", "2023-06-15", "Gold", 40, "2024-06-15", "Active"),
-    ("Mark Lane", "31", 8, "12 East St.", "mark@example.com", "555-4444", "2022-09-25", "Silver", 10, "2023-09-25", "Expired"),
-    ("John Smith", "42", 9, "678 North Ave.", "john.smith@example.com", "555-5555", "2019-12-12", "Gold", 90, "2024-12-12", "Active"),
-    ("Mary Todd", "33", 10, "9 Elder Way", "mary.todd@example.com", "555-6666", "2023-02-02", "Silver", 25, "2024-02-02", "Active"),
-    ("John Lincoln", "45", 11, "123 Elder St.", "john.lincoln@example.com", "555-7777", "2018-04-04", "Platinum", 0, "2026-04-04", "Active"),
-    ("Mary Bush", "36", 12, "435 West Lookout", "mary.bush@example.com", "555-8888", "2021-11-11", "Gold", 60, "2024-11-11", "Active"),
-    ("Tim Reagan", "39", 13, "246 Main St.", "tim.reagan@example.com", "555-9999", "2022-07-07", "Silver", 35, "2023-07-07", "Expired"),
-    ("Erin Smith", "29", 14, "333 Top Way", "erin.smith@example.com", "555-0000", "2023-03-30", "Gold", 55, "2024-03-30", "Active"),
-    ("Bob Field", "41", 15, "876 Left St.", "bob.field@example.com", "555-1010", "2020-05-15", "Platinum", 0, "2025-05-15", "Active"),
-    ("Steve Target", "37", 16, "1234 Main St.", "steve.target@example.com", "555-2020", "2021-08-20", "Silver", 15, "2023-08-20", "Expired"),
-    ("Tina Walton", "26", 17, "654 Street Ave.", "tina.walton@example.com", "555-3030", "2023-06-10", "Gold", 45, "2024-06-10", "Active"),
-    ("Mark Erendale", "34", 18, "12 East St.", "mark.erendale@example.com", "555-4040", "2022-10-05", "Silver", 20, "2023-10-05", "Expired"),
-    ("John Nowerton", "38", 19, "678 North Ave.", "john.nowerton@example.com", "555-5050", "2020-01-01", "Gold", 80, "2024-01-01", "Active"),
-    ("Mary Hornblower", "32", 20, "9 Elder Way", "mary.hornblower@example.com", "555-6060", "2023-09-09", "Platinum", 0, "2025-09-09", "Active")
+# Dummy data to insert into the database
+dummy_data = [
+    ("John Doe", 25, "123 Elm Street", "john.doe@example.com", "1234567890", "2023-01-01", "Monthly", 500.0, 0.0, "2023-01-31", "Active"),
+    ("Jane Smith", 30, "456 Oak Avenue", "jane.smith@example.com", "9876543210", "2023-02-01", "Quarterly", 1500.0, 500.0, "2023-04-30", "Active"),
+    ("Alice Johnson", 28, "789 Pine Road", "alice.johnson@example.com", "5551234567", "2022-12-01", "Yearly", 6000.0, 0.0, "2023-11-30", "Expired"),
+    ("Bob Brown", 35, "321 Maple Lane", "bob.brown@example.com", "4449876543", "2023-03-01", "Monthly", 500.0, 500.0, "2023-03-31", "Active"),
+    ("Charlie Davis", 40, "654 Cedar Drive", "charlie.davis@example.com", "3334567890", "2023-01-15", "Monthly", 500.0, 0.0, "2023-02-14", "Expired"),
 ]
 
+# Insert dummy data into the database
+conn = sqlite3.connect('gym.db')
+c = conn.cursor()
+
+for record in dummy_data:
+    c.execute("""
+        INSERT INTO customers (name, age, address, email, phone, join_date, membership_plan, amount, amount_due, membership_expiry, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, record)
+
+conn.commit()
+conn.close()
 
 
 # Do some database stuff
@@ -338,12 +331,12 @@ c.execute('''CREATE TABLE IF NOT EXISTS customers (
         status TEXT
     )''')
 
-# Add dummy data to table (Uncomment to insert initial data)
+# # Add dummy data to table (Uncomment to insert initial data)
 
-# Add dummy data to table
+# # Add dummy data to table
 
 # for record in data:
-#     c.execute("INSERT INTO customers (name, age, id, address, email, phone, join_date, membership_plan, amount_due, membership_expiry, status) VALUES (:name, :age, :id, :address, :email, :phone, :join_date, :membership_plan, :amount_due, :membership_expiry, :status)", 
+#     c.execute("INSERT INTO customers (name, age, id, address, email, phone, join_date, membership_plan,amount, amount_due, membership_expiry, status) VALUES (:name, :age, :id, :address, :email, :phone, :join_date, :membership_plan,:amount, :amount_due, :membership_expiry, :status)", 
 #         {
 #             'name': record[0],
 #             'age': record[1],
@@ -353,9 +346,10 @@ c.execute('''CREATE TABLE IF NOT EXISTS customers (
 #             'phone': record[5],
 #             'join_date': record[6],
 #             'membership_plan': record[7],
-#             'amount_due': record[8],
-#             'membership_expiry': record[9],
-#             'status': record[10]
+#             'amount': record[8],
+#             'amount_due': record[9],
+#             'membership_expiry': record[10],
+#             'status': record[11]
 #         }
 #     )
 
@@ -400,7 +394,7 @@ my_tree.pack()
 tree_scroll.config(command=my_tree.yview)
 
 # Define Our Columns
-my_tree['columns'] = ("Member ID", "Name", "Age", "Address", "Email", "Phone", "Join Date", "Membership Plan", "Amount Due", "Membership Expiry", "Status")
+my_tree['columns'] = ("Member ID", "Name", "Age", "Address", "Email", "Phone", "Join Date", "Membership Plan","Amount", "Amount Due", "Membership Expiry", "Status")
 
 
 # Format Our Columns
@@ -413,6 +407,7 @@ my_tree.column("Email", anchor=W, width=180)
 my_tree.column("Phone", anchor=CENTER, width=120)
 my_tree.column("Join Date", anchor=CENTER, width=100)
 my_tree.column("Membership Plan", anchor=CENTER, width=140)
+my_tree.column("Amount", anchor=CENTER, width=100)
 my_tree.column("Amount Due", anchor=CENTER, width=100)
 my_tree.column("Membership Expiry", anchor=CENTER, width=120)
 my_tree.column("Status", anchor=CENTER, width=100)
@@ -427,6 +422,7 @@ my_tree.heading("Email", text="Email", anchor=W)
 my_tree.heading("Phone", text="Phone", anchor=CENTER)
 my_tree.heading("Join Date", text="Join Date", anchor=CENTER)
 my_tree.heading("Membership Plan", text="Membership Plan", anchor=CENTER)
+my_tree.heading("Amount", text="Amount", anchor=CENTER)
 my_tree.heading("Amount Due", text="Amount Due", anchor=CENTER)
 my_tree.heading("Membership Expiry", text="Membership Expiry", anchor=CENTER)
 my_tree.heading("Status", text="Status", anchor=CENTER)
@@ -488,6 +484,7 @@ membership_label.grid(row=2, column=2, padx=10, pady=10)
 membership_entry = Entry(data_frame)
 membership_entry.grid(row=2, column=3, padx=10, pady=10)
 
+
 # Amount Due
 amount_due_label = Label(data_frame, text="Amount Due")
 amount_due_label.grid(row=2, column=4, padx=10, pady=10)
@@ -506,6 +503,11 @@ status_label.grid(row=3, column=2, padx=10, pady=10)
 status_entry = Entry(data_frame)
 status_entry.grid(row=3, column=3, padx=10, pady=10)
 
+#Amount
+amount_label = Label(data_frame, text="Amount")
+amount_label.grid(row=3, column=4, padx=10, pady=10)
+amount_entry = Entry(data_frame)
+amount_entry.grid(row=3, column=5, padx=10, pady=10)
 
 # Move Row Up
 def up():
@@ -612,6 +614,7 @@ def clear_entries():
     phone_entry.delete(0, END)  # Added missing phone field
     join_date_entry.delete(0, END)
     membership_entry.delete(0, END)
+    amount_entry.delete(0, END)  # Added missing amount field
     amount_due_entry.delete(0, END)
     expiry_entry.delete(0, END)
     status_entry.delete(0, END)  # Added missing status field
@@ -640,6 +643,7 @@ def select_record(e):
     phone_entry.insert(0, values[5])  # Phone (Added missing field)
     join_date_entry.insert(0, values[6])  # Join Date
     membership_entry.insert(0, values[7])  # Membership Plan
+    amount_entry.insert(0, values[8])  # Amount (Added missing field)
     amount_due_entry.insert(0, values[8])  # Amount Due
     expiry_entry.insert(0, values[9])  # Membership Expiry
     status_entry.insert(0, values[10])  # Membership Status (Added missing field)
@@ -652,7 +656,7 @@ def update_record():
 	# Update record
 	my_tree.item(selected, text="", values=(
 		id_entry.get(), n_entry.get(), age_entry.get(), address_entry.get(), email_entry.get(),
-		phone_entry.get(), join_date_entry.get(), membership_entry.get(), amount_due_entry.get(),
+		phone_entry.get(), join_date_entry.get(), membership_entry.get(),amount_entry.get(), amount_due_entry.get(),
 		expiry_entry.get(), status_entry.get()
 	))
 	# Update the database
@@ -671,6 +675,7 @@ def update_record():
 		phone = :phone,
 		join_date = :join_date,
 		membership_plan = :membership_plan,
+        amount = :amount,
 		amount_due = :amount_due,
 		membership_expiry = :membership_expiry,
 		status = :status
@@ -683,7 +688,8 @@ def update_record():
 			'phone': phone_entry.get(),
 			'join_date': join_date_entry.get(),
 			'membership_plan': membership_entry.get(),
-			'amount_due': amount_due_entry.get(),
+            'amount': amount_entry.get(),
+            'amount_due': amount_due_entry.get(),
 			'membership_expiry': expiry_entry.get(),
 			'status': status_entry.get(),
 			'id': id_entry.get()
@@ -711,9 +717,9 @@ def add_record():
     c = conn.cursor()
 
     # Add New Record
-    c.execute("INSERT INTO customers (id, name, age, address, email, phone, join_date, membership_plan, amount_due, membership_expiry, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    c.execute("INSERT INTO customers (id, name, age, address, email, phone, join_date, membership_plan, amount_due, membership_expiry, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
               (id_entry.get(), n_entry.get(), age_entry.get(), address_entry.get(), email_entry.get(), phone_entry.get(),
-               join_date_entry.get(), membership_entry.get(), amount_due_entry.get(), expiry_entry.get(), status_entry.get()))
+               join_date_entry.get(), membership_entry.get(), amount_entry.get(),amount_due_entry.get(), expiry_entry.get(), status_entry.get()))
 
     # Commit changes and close connection
     conn.commit()
@@ -735,24 +741,130 @@ def create_table_again():
     c = conn.cursor()
 
     # Create Table
-    c.execute("""CREATE TABLE IF NOT EXISTS customers (
-        id INTEGER PRIMARY KEY,
+    c.execute('''CREATE TABLE IF NOT EXISTS customers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
-        age TEXT,
+        age INTEGER,
         address TEXT,
         email TEXT,
         phone TEXT,
         join_date TEXT,
         membership_plan TEXT,
-        amount_due INTEGER,
+        amount REAL,
+        amount_due REAL,
         membership_expiry TEXT,
         status TEXT
-    )""")
+    )''')
 
     # Commit and close
     conn.commit()
     conn.close()
 
+
+
+# Fetch Data from Database
+def fetch_customer_details(customer_name):
+    conn = sqlite3.connect("gym.db")
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT gym_name, address FROM users LIMIT 1")
+    gym_data = cursor.fetchone()
+    gym_name, gym_address = gym_data if gym_data else ("My Gym", "No Address Available")
+    
+    cursor.execute("""
+        SELECT id, name, phone, join_date, membership_expiry, amount 
+        FROM customers WHERE name LIKE ? LIMIT 1
+    """, (f"%{customer_name}%",))
+    customer_data = cursor.fetchone()
+    
+    conn.close()
+    
+    if customer_data:
+        return {
+            "id": customer_data[0],
+            "gym_name": gym_name,
+            "gym_address": gym_address,
+            "name": customer_data[1],
+            "phone": customer_data[2],
+            "join_date": customer_data[3],
+            "membership_expiry": customer_data[4],
+            "amount": customer_data[5],
+            "date": datetime.today().strftime("%Y-%m-%d")
+        }
+    return None
+
+def create_dumbbell():
+    """Create a simple dumbbell logo using lines and circles."""
+    return Group(
+        Line(40, 100, 160, 100, strokeWidth=8, strokeColor=colors.black),  # Bar
+        Line(40, 110, 40, 90, strokeWidth=10, strokeColor=colors.black),   # Left Weight
+        Line(160, 110, 160, 90, strokeWidth=10, strokeColor=colors.black)  # Right Weight
+    )
+    dumbbell.translate(150, -30)  # Move it lower
+    return dumbbell
+# Generate Receipt PDF
+
+def generate_receipt(customer_name):
+    data = fetch_customer_details(customer_name)
+    if not data:
+        messagebox.showerror("Error", "No customer data found!")
+        return
+    
+    receipt_folder = "receipt"
+    os.makedirs(receipt_folder, exist_ok=True)
+    receipt_path = os.path.join(receipt_folder, f"{data['name']}_receipt.pdf")
+    
+    c = canvas.Canvas(receipt_path, pagesize=letter)
+    width, height = letter
+    
+    # Drawing Gym Name & Logo
+    drawing = Drawing(200, 50)
+    drawing.add(create_dumbbell())
+    drawing.add(String(60, 120, data["gym_name"], fontName="Times", fontSize=16, fillColor=colors.black))
+    drawing.drawOn(c, 150, 650)
+
+    # Separator Line
+    c.setStrokeColor(colors.grey)
+    c.setLineWidth(2)
+    c.line(50, 680, 550, 680)
+
+    # Gym Address
+    c.setFont("Times", 12)
+    c.drawString(180, 660, f"Address: {data['gym_address']}")
+
+    # Receipt Details
+    c.drawString(50, 620, f"Date: {data['date']}")
+    c.drawString(350, 620, f"Mobile No: {data['phone']}")
+    
+    c.drawString(50, 590, f"Received with thanks from: {data['name']}")
+    c.drawString(50, 560, f"Being fees for the gymnasium from {data['join_date']} to {data['membership_expiry']}")
+    
+    c.setFont("Times-Bold", 14)
+    c.drawString(50, 520, f"Rs. {data['amount']}")
+
+    # Signature Lines
+    c.setFont("Times", 12)
+    c.line(50, 450, 200, 450)
+    c.drawString(80, 435, "Member's Signature")
+
+    c.line(350, 450, 500, 450)
+    c.drawString(390, 435, "Sir's Signature")
+    
+    c.save()
+    messagebox.showinfo("Success", f"Receipt saved at: {receipt_path}")
+
+def generate_receipt_ui():
+    selected = my_tree.focus()
+    values = my_tree.item(selected, 'values')
+
+    if not values:
+        messagebox.showerror("Error", "No record selected!")
+        return
+    
+    customer_name = values[1]  # Assuming Name is the second column
+    generate_receipt(customer_name)
+def show_reports():
+    print("Show Reports button clicked!")  # Replace with actual functionality
 
 # Add Buttons
 button_frame = LabelFrame(root, text="Commands")
@@ -785,6 +897,11 @@ select_record_button.grid(row=0, column=7, padx=10, pady=10)
 select_record_button = Button(button_frame, text="Clear Entry Boxes", command=clear_entries)
 select_record_button.grid(row=0, column=7, padx=10, pady=10)
 
+receipt_button = Button(button_frame, text="Generate Receipt", command=generate_receipt_ui)
+receipt_button.grid(row=0, column=8, padx=10, pady=10)
+
+show_reports_button = Button(button_frame, text="Show Reports", command=show_reports)
+show_reports_button.grid(row=0, column=9, padx=10, pady=10)
 
 
 
