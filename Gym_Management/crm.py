@@ -278,15 +278,12 @@ my_menu.add_cascade(label="Search", menu=search_menu)
 search_menu.add_command(label="Search", command=lookup_records)
 search_menu.add_separator()
 search_menu.add_command(label="Reset", command=query_database)
-# Filter Menu
-filter_menu = Menu(my_menu, tearoff=0)
-my_menu.add_cascade(label="Filter", menu=filter_menu)
 
-# Dropdown options
-filter_menu.add_command(label="Expired Memberships", command=lambda: filter_records("expired"))
-filter_menu.add_command(label="Amount Due", command=lambda: filter_records("due"))
-filter_menu.add_separator()
-filter_menu.add_command(label="Reset", command=query_database)  # Reset to show all records
+# Direct menu options
+my_menu.add_command(label="Expired Memberships", command=lambda: filter_records("expired"))
+my_menu.add_command(label="Amount Due", command=lambda: filter_records("due"))
+my_menu.add_command(label="Reset", command=query_database)  # Reset to show all records
+
 
 
 
