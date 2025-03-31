@@ -1,1 +1,1 @@
-# gymmy
+# Gym Management App 
