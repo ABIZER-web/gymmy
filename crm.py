@@ -3,38 +3,43 @@ from tkinter import ttk
 from tkinter import messagebox
 import sqlite3
 from tkinter import colorchooser
-from configparser import ConfigParser
 from ttkbootstrap import *
 from ttkbootstrap.dialogs import Messagebox
 import ttkbootstrap as tb
 import os
-import os
-from tkinter import StringVar, messagebox
+from tkinter import StringVar, messagebox 
 from ttkbootstrap.constants import *
 from reportlab.lib.pagesizes import letter
 from datetime import datetime
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from reportlab.graphics.shapes import Drawing, Line, String, Group, Rect
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase.pdfmetrics import registerFont
 from reportlab.graphics.shapes import Circle
 import matplotlib.pyplot as plt
-# Register a font
-registerFont(TTFont("Times", "Times.ttf"))  # Ensure "Times.ttf" is available on your system
+
+
+
 
 root = tb.Window(themename="superhero")
 root.title('Gym Management- TreeBase')
 root.geometry("1000x550")
 
-# Read our config file and get colors
-parser = ConfigParser()
-parser.read("treebase.ini")
-saved_primary_color = parser.get('colors', 'primary_color')
-saved_secondary_color = parser.get('colors', 'secondary_color')
-saved_highlight_color = parser.get('colors', 'highlight_color')
 
 
+
+import os
+import sys
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS  # PyInstaller temp folder
+    except AttributeError:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+# Usage in code
+image_path = resource_path("assets/signature.png")
 
 
 def query_database():
@@ -54,7 +59,7 @@ def query_database():
 
     for record in records:
         my_tree.insert(parent='', index='end', iid=count, text='', 
-                       values=(record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[7], record[8], record[9], record[10],record[11]), 
+                       values=(record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[7], record[8], record[9], record[10],record[11],record[12]), 
                        tags=('evenrow' if count % 2 == 0 else 'oddrow'))
         count += 1  # Increment counter
 
@@ -192,14 +197,7 @@ def primary_color():
 		# Create Striped Row Tags
 		my_tree.tag_configure('evenrow', background=primary_color)
 
-		# Config file
-		parser = ConfigParser()
-		parser.read("treebase.ini")
-		# Set the color change
-		parser.set('colors', 'primary_color', primary_color)
-		# Save the config file
-		with open('treebase.ini', 'w') as configfile:
-			parser.write(configfile)
+
 
 
 def secondary_color():
@@ -211,14 +209,7 @@ def secondary_color():
 		# Create Striped Row Tags
 		my_tree.tag_configure('oddrow', background=secondary_color)
 		
-		# Config file
-		parser = ConfigParser()
-		parser.read("treebase.ini")
-		# Set the color change
-		parser.set('colors', 'secondary_color', secondary_color)
-		# Save the config file
-		with open('treebase.ini', 'w') as configfile:
-			parser.write(configfile)
+
 
 def highlight_color():
 	# Pick Color
@@ -230,24 +221,9 @@ def highlight_color():
 		style.map('Treeview',
 			background=[('selected', highlight_color)])
 
-		# Config file
-		parser = ConfigParser()
-		parser.read("treebase.ini")
-		# Set the color change
-		parser.set('colors', 'highlight_color', highlight_color)
-		# Save the config file
-		with open('treebase.ini', 'w') as configfile:
-			parser.write(configfile)
+
 
 def reset_colors():
-	# Save original colors to config file
-	parser = ConfigParser()
-	parser.read('treebase.ini')
-	parser.set('colors', 'primary_color', 'lightblue')
-	parser.set('colors', 'secondary_color', 'white')
-	parser.set('colors', 'highlight_color', '#347083')
-	with open('treebase.ini', 'w') as configfile:
-			parser.write(configfile)
 	# Reset the colors
 	my_tree.tag_configure('oddrow', background='white')
 	my_tree.tag_configure('evenrow', background='lightblue')
@@ -304,39 +280,29 @@ def register_gym():
     Button(top, text="Save", command=save_gym).grid(row=2, columnspan=2, pady=10)
 
 def create_equipment_window():
-
-    # Create a Toplevel window instead of a new root window
+    # Create a Toplevel window for equipment management
     equipment_window = Toplevel(root)
     equipment_window.title('Gym Management - Equipment Management')
     equipment_window.geometry("1000x550")
-    
 
-    
-        # Connect to the database (or create it if it doesn't exist)
+    # Connect to the database and create the equipment table if it doesn't exist
     conn = sqlite3.connect('gym.db')
-
-        # Create a cursor instance
     c = conn.cursor()
-
-        # Create the equipment table if it does not exist
     c.execute("""
     CREATE TABLE IF NOT EXISTS equipment (
             id INTEGER PRIMARY KEY,
             name TEXT,
             type TEXT,
             purchase_date TEXT,
-            condition TEXT,
-            count INTEGER,
-            kg REAL
+            condition TEXT
         )
-        """)
-
-        # Commit changes and close the connection
+    """)
     conn.commit()
     conn.close()
 
+    # Function to query and display equipment data in the Treeview
     def query_database():
-        my_tree.delete(*my_tree.get_children())
+        my_tree.delete(*my_tree.get_children())  # Clear the Treeview
         conn = sqlite3.connect('gym.db')
         c = conn.cursor()
         c.execute("SELECT * FROM equipment")
@@ -349,7 +315,8 @@ def create_equipment_window():
             count += 1
         conn.commit()
         conn.close()
-    
+
+    # Function to search for equipment records
     def search_records():
         lookup_record = search_entry.get().strip()
         if not lookup_record:
@@ -371,7 +338,8 @@ def create_equipment_window():
         conn.close()
         if not records:
             messagebox.showinfo("Not Found", "No records matched your search.")
-    
+
+    # Function to open a search window
     def lookup_records():
         global search_entry, search
         search = Toplevel(root)
@@ -383,27 +351,29 @@ def create_equipment_window():
         search_entry.pack(pady=20, padx=20)
         search_button = ttk.Button(search, text="Search Records", command=search_records)
         search_button.pack(padx=20, pady=20)
-    
+
+    # Functions to customize Treeview colors
     def primary_color():
         primary_color = colorchooser.askcolor()[1]
         if primary_color:
             my_tree.tag_configure('evenrow', background=primary_color)
-    
+
     def secondary_color():
         secondary_color = colorchooser.askcolor()[1]
         if secondary_color:
             my_tree.tag_configure('oddrow', background=secondary_color)
-    
+
     def highlight_color():
         highlight_color = colorchooser.askcolor()[1]
         if highlight_color:
             style.map('Treeview', background=[('selected', highlight_color)])
-    
+
     def reset_colors():
         my_tree.tag_configure('oddrow', background='white')
         my_tree.tag_configure('evenrow', background='lightblue')
         style.map('Treeview', background=[('selected', '#347083')])
-    
+
+    # Create menu for equipment management
     my_menu = Menu(equipment_window)
     equipment_window.config(menu=my_menu)
     option_menu = Menu(my_menu, tearoff=0)
@@ -415,23 +385,60 @@ def create_equipment_window():
     option_menu.add_command(label="Reset Colors", command=reset_colors)
     option_menu.add_separator()
     option_menu.add_command(label="Exit", command=root.quit)
-    
+
+    # Search menu
     search_menu = Menu(my_menu, tearoff=0)
     my_menu.add_cascade(label="Search", menu=search_menu)
     search_menu.add_command(label="Search", command=lookup_records)
     search_menu.add_separator()
     search_menu.add_command(label="Reset", command=query_database)
 
+    data = [
+    ("Treadmill", "Cardio", "2023-01-01", "Good"),
+    ("Elliptical", "Cardio", "2022-12-01", "Excellent"),
+    ("Bench Press", "Strength", "2023-03-15", "Good"),
+    ("Dumbbells", "Strength", "2021-07-10", "Fair"),
+    ("Rowing Machine", "Cardio", "2023-05-20", "Good"),
+]
+    # Do some database stuff
+# Create a database or connect to one that exists
+    conn = sqlite3.connect('gym.db')
 
-    
-    
+# Create a cursor instance
+    c = conn.cursor()
 
-    
+# Create Table
+    c.execute("""CREATE TABLE IF NOT EXISTS equipment (
+    id INTEGER PRIMARY KEY, 
+    name TEXT, 
+    type TEXT, 
+    purchase_date TEXT, 
+    condition TEXT
+    )
+""")
+
+# Add dummy data to table (Uncomment to insert initial data)
+
+#  for record in data:
+#     c.execute("INSERT INTO equipment (name, type, purchase_date, condition) VALUES (:name, :type, :purchase_date, :condition)", 
+#         {
+#             'name': record[0],
+#             'type': record[1],
+#             'purchase_date': record[2],
+#             'condition': record[3]
+#         }
+#     )
+
+    conn.commit()  # ✅ Save changes
+
+    conn.close()
+    # Configure Treeview style
     style = ttk.Style()
     style.theme_use('default')
     style.configure("Treeview", background="#D3D3D3", foreground="black", rowheight=25, fieldbackground="#D3D3D3")
     style.map('Treeview', background=[('selected', '#347083')])
-    
+
+    # Create Treeview frame and scrollbar
     tree_frame = Frame(equipment_window)
     tree_frame.pack(pady=10)
     tree_scroll = Scrollbar(tree_frame)
@@ -439,7 +446,8 @@ def create_equipment_window():
     my_tree = ttk.Treeview(tree_frame, yscrollcommand=tree_scroll.set, selectmode="extended")
     my_tree.pack()
     tree_scroll.config(command=my_tree.yview)
-    
+
+    # Define Treeview columns
     my_tree['columns'] = ("Equipment ID", "Name", "Type", "Purchase Date", "Condition")
     my_tree.column("#0", width=0, stretch=NO)
     my_tree.column("Equipment ID", anchor=CENTER, width=100)
@@ -455,45 +463,48 @@ def create_equipment_window():
     my_tree.heading("Condition", text="Condition", anchor=CENTER)
     my_tree.tag_configure('oddrow', background='white')
     my_tree.tag_configure('evenrow', background='lightblue')
-    
+
+    # Create data entry frame
     data_frame = LabelFrame(equipment_window, text="Equipment Details")
     data_frame.pack(fill="x", expand="yes", padx=20, pady=10)
-    
+
+    # Define entry fields for equipment details
     id_label = ttk.Label(data_frame, text="Equipment ID")
     id_label.grid(row=0, column=0, padx=10, pady=10)
     id_entry = ttk.Entry(data_frame)
     id_entry.grid(row=0, column=1, padx=10, pady=10)
-    
+
     n_label = ttk.Label(data_frame, text="Name")
     n_label.grid(row=0, column=2, padx=10, pady=10)
     n_entry = ttk.Entry(data_frame)
     n_entry.grid(row=0, column=3, padx=10, pady=10)
-    
+
     type_label = ttk.Label(data_frame, text="Type")
     type_label.grid(row=0, column=4, padx=10, pady=10)
     type_entry = ttk.Entry(data_frame)
     type_entry.grid(row=0, column=5, padx=10, pady=10)
-    
+
     purchase_date_label = ttk.Label(data_frame, text="Purchase Date (YYYY-MM-DD)")
     purchase_date_label.grid(row=1, column=0, padx=10, pady=10)
     purchase_date_entry = ttk.Entry(data_frame)
     purchase_date_entry.grid(row=1, column=1, padx=10, pady=10)
-    
+
     condition_label = ttk.Label(data_frame, text="Condition")
     condition_label.grid(row=1, column=2, padx=10, pady=10)
     condition_entry = ttk.Entry(data_frame)
     condition_entry.grid(row=1, column=3, padx=10, pady=10)
-    
+
+    # Functions for Treeview operations (move, remove, clear, etc.)
     def up():
         rows = my_tree.selection()
         for row in rows:
             my_tree.move(row, my_tree.parent(row), my_tree.index(row)-1)
-    
+
     def down():
         rows = my_tree.selection()
         for row in reversed(rows):
             my_tree.move(row, my_tree.parent(row), my_tree.index(row)+1)
-    
+
     def remove_one():
         selected = my_tree.selection()
         if not selected:
@@ -509,7 +520,7 @@ def create_equipment_window():
         conn.close()
         clear_entries()
         messagebox.showinfo("Deleted!", f"Equipment ID {equipment_id} has been deleted.")
-    
+
     def remove_many():
         selected_items = my_tree.selection()
         if not selected_items:
@@ -527,7 +538,7 @@ def create_equipment_window():
             conn.close()
             clear_entries()
             messagebox.showinfo("Deleted!", "Selected records have been deleted.")
-    
+
     def remove_all():
         response = messagebox.askyesno("Confirm", "Are you sure you want to DELETE ALL records and DROP the table?")
         if response == 1:
@@ -540,14 +551,14 @@ def create_equipment_window():
             clear_entries()
             create_table_again()
             messagebox.showinfo("Deleted!", "All records have been deleted, and the table structure has been recreated.")
-    
+
     def clear_entries():
         id_entry.delete(0, END)
         n_entry.delete(0, END)
         type_entry.delete(0, END)
         purchase_date_entry.delete(0, END)
         condition_entry.delete(0, END)
-    
+
     def select_record(e):
         clear_entries()
         selected = my_tree.focus()
@@ -559,7 +570,7 @@ def create_equipment_window():
         type_entry.insert(0, values[2])
         purchase_date_entry.insert(0, values[3])
         condition_entry.insert(0, values[4])
-    
+
     def update_record():
         selected = my_tree.focus()
         my_tree.item(selected, text="", values=(
@@ -604,7 +615,7 @@ def create_equipment_window():
         my_tree.delete(*my_tree.get_children())
         query_database()
         messagebox.showinfo("Success", "Record added successfully!")
-    
+
     def create_table_again():
         conn = sqlite3.connect('gym.db')
         c = conn.cursor()
@@ -617,7 +628,8 @@ def create_equipment_window():
         )""")
         conn.commit()
         conn.close()
-    
+
+    # Create buttons for equipment management commands
     button_frame = LabelFrame(equipment_window, text="Commands")
     button_frame.pack(fill="x", expand="yes", padx=20, pady=20)
     update_button = ttk.Button(button_frame, text="Update Record", command=update_record)
@@ -636,16 +648,111 @@ def create_equipment_window():
     move_down_button.grid(row=0, column=6, padx=10, pady=10)
     clear_entries_button = Button(button_frame, text="Clear Entry Boxes", command=clear_entries)
     clear_entries_button.grid(row=0, column=7, padx=10, pady=10)
-    
+
+    # Bind Treeview selection event
     my_tree.bind("<ButtonRelease-1>", select_record)
+
+    # Query database to populate Treeview
     query_database()
+
+    # Start the equipment management window
     equipment_window.mainloop()
 # Add Menu
 my_menu = Menu(root)
 root.config(menu=my_menu)
 
 
+def show_time_slot_report():
+    """Generate a pie chart showing the distribution of members in each time slot."""
+    # Connect to the database
+    conn = sqlite3.connect("gym.db")
+    cursor = conn.cursor()
 
+    # Define time slots
+    time_slots = ["6:00 AM to 11:00 AM", "11:00 AM to 6:00 PM", "6:00 PM to 12:00 AM"]
+
+    # Count members for each time slot
+    counts = []
+    for slot in time_slots:
+        cursor.execute("SELECT COUNT(*) FROM customers WHERE time_slots = ?", (slot,))
+        counts.append(cursor.fetchone()[0])
+
+    conn.close()  # Close the database connection
+
+    # Check if there are any members
+    if sum(counts) == 0:
+        messagebox.showinfo("No Data", "No members found in any time slot.")
+        return
+
+    # Create pie chart
+    plt.figure(figsize=(6, 6))
+    colors = ["#FFA07A", "#20B2AA", "#9370DB"]  # Colors for each time slot
+    explode = [0.1 if count == max(counts) else 0 for count in counts]  # Highlight the largest slice
+    plt.pie(counts, labels=time_slots, autopct="%1.1f%%", colors=colors, explode=explode, startangle=90)
+    plt.title("Member Distribution by Time Slot")
+    plt.tight_layout()
+
+    # Show the chart
+    plt.show()
+
+def show_earnings_report():
+    """Generate a horizontal bar chart displaying member earnings in different time slots."""
+    # Connect to the database
+    conn = sqlite3.connect("gym.db")
+    cursor = conn.cursor()
+
+    # Define time slots
+    time_slots = ["6:00 AM to 11:00 AM", "11:00 AM to 6:00 PM", "6:00 PM to 12:00 AM"]
+
+    # Calculate total earnings for each time slot
+    earnings = []
+    for slot in time_slots:
+        cursor.execute("SELECT SUM(amount) FROM customers WHERE time_slots = ?", (slot,))
+        total = cursor.fetchone()[0]
+        earnings.append(total if total else 0)  # Handle None values
+
+    conn.close()  # Close the database connection
+
+    # Create horizontal bar chart
+    plt.figure(figsize=(8, 6))
+    plt.barh(time_slots, earnings, color=["#FFA07A", "#20B2AA", "#9370DB"])
+    plt.title("Earnings by Time Slot")
+    plt.xlabel("Total Earnings (Rs.)")
+    plt.ylabel("Time Slots")
+    plt.tight_layout()
+
+    # Show the chart
+    plt.show()
+
+
+def show_pie_chart():
+    """Fetch data from the database and display a pie chart of active vs expired members."""
+    
+    # Connect to the database
+    conn = sqlite3.connect("gym.db")  # Change to your database name
+    cursor = conn.cursor()
+
+    # Count expired and active members
+    cursor.execute("SELECT COUNT(*) FROM customers WHERE status='Expired'")
+    expired_count = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM customers WHERE status='Active'")
+    active_count = cursor.fetchone()[0]
+
+    conn.close()  # Close the database connection
+
+    # Data for the pie chart
+    labels = ["Expired Memberships", "Active Memberships"]
+    sizes = [expired_count, active_count]
+    colors = ["#FF6666", "#66B266"]  # Red for expired, Green for active
+    explode = (0.1, 0)  # Slightly separate expired slice for emphasis
+
+    # Create Pie Chart
+    plt.figure(figsize=(6, 6))
+    plt.pie(sizes, labels=labels, autopct="%1.1f%%", colors=colors, explode=explode, startangle=90, shadow=True)
+    plt.title("Membership Status Distribution")
+    
+    plt.show()  # Show the pie chart
 # Configure our menu
 option_menu = Menu(my_menu, tearoff=0)
 my_menu.add_cascade(label="Options", menu=option_menu)
@@ -671,17 +778,29 @@ my_menu.add_command(label="Amount Due", command=lambda: filter_records("due"))
 my_menu.add_command(label="Reset", command=query_database)  # Reset to show all records
 my_menu.add_command(label="Register Gym", command=register_gym)
 my_menu.add_command(label="Open Equipment Management", command=create_equipment_window)
+# Reports Menu
+reports_menu = Menu(my_menu, tearoff=0)
+my_menu.add_cascade(label="Reports", menu=reports_menu)
+
+# Add dropdown options
+
+reports_menu.add_command(label="Time Slots", command=show_time_slot_report)
+reports_menu.add_command(label="Earnings", command=show_earnings_report)
+reports_menu.add_command(label="Membership Report", command=show_pie_chart)
 
 
-# Dummy data to insert into the database
-dummy_data = [
-    ("John Doe", 25, "123 Elm Street", "john.doe@example.com", "1234567890", "2023-01-01", "Monthly", 500.0, 0.0, "2023-01-31", "Active"),
-    ("Jane Smith", 30, "456 Oak Avenue", "jane.smith@example.com", "9876543210", "2023-02-01", "Quarterly", 1500.0, 500.0, "2023-04-30", "Active"),
-    ("Alice Johnson", 28, "789 Pine Road", "alice.johnson@example.com", "5551234567", "2022-12-01", "Yearly", 6000.0, 0.0, "2023-11-30", "Expired"),
-    ("Bob Brown", 35, "321 Maple Lane", "bob.brown@example.com", "4449876543", "2023-03-01", "Monthly", 500.0, 500.0, "2023-03-31", "Active"),
-    ("Charlie Davis", 40, "654 Cedar Drive", "charlie.davis@example.com", "3334567890", "2023-01-15", "Monthly", 500.0, 0.0, "2023-02-14", "Expired"),
-]
 
+
+
+
+# Sample data to match the order in your INSERT statement
+# data = [
+#     (1001, "John Doe", 25, "123 Elm Street", "john.doe@example.com", "1234567890", "2023-01-01", "Monthly", 500.0, 0.0, "2023-01-31", "Active"),
+#     (1002, "Jane Smith", 30, "456 Oak Avenue", "jane.smith@example.com", "9876543210", "2023-02-01", "Quarterly", 1500.0, 500.0, "2023-04-30", "Active"),
+#     (1003, "Alice Johnson", 28, "789 Pine Road", "alice.johnson@example.com", "5551234567", "2022-12-01", "Yearly", 6000.0, 0.0, "2023-11-30", "Expired"),
+#     (1004, "Bob Brown", 35, "321 Maple Lane", "bob.brown@example.com", "4449876543", "2023-03-01", "Monthly", 500.0, 500.0, "2023-03-31", "Active"),
+#     (1005, "Charlie Davis", 40, "654 Cedar Drive", "charlie.davis@example.com", "3334567890", "2023-01-15", "Monthly", 500.0, 0.0, "2023-02-14", "Expired"),
+# ]
 
 
 # Do some database stuff
@@ -707,32 +826,22 @@ c.execute('''CREATE TABLE IF NOT EXISTS customers (
         amount REAL,
         amount_due REAL,
         membership_expiry TEXT,
-        status TEXT
+        status TEXT,
+        time_slots TEXT
     )''')
 
-# Insert dummy data into the database
-conn = sqlite3.connect('gym.db')
-c = conn.cursor()
 
-for record in dummy_data:
-    c.execute("""
-        INSERT INTO customers (name, age, address, email, phone, join_date, membership_plan, amount, amount_due, membership_expiry, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, record)
 
-conn.commit()
-conn.close()
+# Add dummy data to table (Uncomment to insert initial data)
 
-# # Add dummy data to table (Uncomment to insert initial data)
-
-# # Add dummy data to table
+# Add dummy data to table
 
 # for record in data:
-#     c.execute("INSERT INTO customers (name, age, id, address, email, phone, join_date, membership_plan,amount, amount_due, membership_expiry, status) VALUES (:name, :age, :id, :address, :email, :phone, :join_date, :membership_plan,:amount, :amount_due, :membership_expiry, :status)", 
+#     c.execute("INSERT INTO customers (id ,name, age, address, email, phone, join_date, membership_plan,amount, amount_due, membership_expiry, status) VALUES (:id, :name, :age,  :address, :email, :phone, :join_date, :membership_plan,:amount, :amount_due, :membership_expiry, :status)", 
 #         {
-#             'name': record[0],
-#             'age': record[1],
-#             'id': record[2],
+#             'id': record[0],
+#             'name': record[1],
+#             'age': record[2],
 #             'address': record[3],
 #             'email': record[4],
 #             'phone': record[5],
@@ -742,6 +851,7 @@ conn.close()
 #             'amount_due': record[9],
 #             'membership_expiry': record[10],
 #             'status': record[11]
+            #  'time_slots': record[12]
 #         }
 #     )
 
@@ -767,7 +877,7 @@ style.configure("Treeview",
 
 # Change Selected Color #347083
 style.map('Treeview',
-	background=[('selected', saved_highlight_color)])
+	background=[('selected', highlight_color)])
 
 # Create a Treeview Frame
 tree_frame = Frame(root)
@@ -786,7 +896,7 @@ my_tree.pack()
 tree_scroll.config(command=my_tree.yview)
 
 # Define Our Columns
-my_tree['columns'] = ("Member ID", "Name", "Age", "Address", "Email", "Phone", "Join Date", "Membership Plan","Amount", "Amount Due", "Membership Expiry", "Status")
+my_tree['columns'] = ("Member ID", "Name", "Age", "Address", "Email", "Phone", "Join Date", "Membership Plan","Amount", "Amount Due", "Membership Expiry", "Status", "Time Slots")
 
 
 # Format Our Columns
@@ -803,6 +913,7 @@ my_tree.column("Amount", anchor=CENTER, width=100)
 my_tree.column("Amount Due", anchor=CENTER, width=100)
 my_tree.column("Membership Expiry", anchor=CENTER, width=120)
 my_tree.column("Status", anchor=CENTER, width=100)
+my_tree.column("Time Slots", anchor=CENTER, width=100)
 
 # Create Headings
 my_tree.heading("#0", text="", anchor=W)
@@ -818,10 +929,11 @@ my_tree.heading("Amount", text="Amount", anchor=CENTER)
 my_tree.heading("Amount Due", text="Amount Due", anchor=CENTER)
 my_tree.heading("Membership Expiry", text="Membership Expiry", anchor=CENTER)
 my_tree.heading("Status", text="Status", anchor=CENTER)
+my_tree.heading("Time Slots", text="Time Slots", anchor=CENTER)
 
 # Create Striped Row Tags
-my_tree.tag_configure('oddrow', background=saved_secondary_color)
-my_tree.tag_configure('evenrow', background=saved_primary_color)
+my_tree.tag_configure('oddrow', background='white')
+my_tree.tag_configure('evenrow', background='lightblue')
 
 
 # Add Record Entry Boxes
@@ -900,6 +1012,15 @@ amount_label = Label(data_frame, text="Amount")
 amount_label.grid(row=3, column=4, padx=10, pady=10)
 amount_entry = Entry(data_frame)
 amount_entry.grid(row=3, column=5, padx=10, pady=10)
+
+# Time Slots
+time_slots_label = Label(data_frame, text="Time Slots")
+time_slots_label.grid(row=4, column=0, padx=10, pady=10)
+time_slots_entry = Entry(data_frame)
+time_slots_entry.grid(row=4, column=1, padx=10, pady=10)
+
+
+
 
 # Move Row Up
 def up():
@@ -1010,7 +1131,7 @@ def clear_entries():
     amount_due_entry.delete(0, END)
     expiry_entry.delete(0, END)
     status_entry.delete(0, END)  # Added missing status field
-
+    time_slots_entry.delete(0, END)  # Added missing time slots field
 # Select Record
 def select_record(e):
     # Clear existing entries
@@ -1036,9 +1157,10 @@ def select_record(e):
     join_date_entry.insert(0, values[6])  # Join Date
     membership_entry.insert(0, values[7])  # Membership Plan
     amount_entry.insert(0, values[8])  # Amount (Added missing field)
-    amount_due_entry.insert(0, values[8])  # Amount Due
-    expiry_entry.insert(0, values[9])  # Membership Expiry
-    status_entry.insert(0, values[10])  # Membership Status (Added missing field)
+    amount_due_entry.insert(0, values[9])  # Amount Due
+    expiry_entry.insert(0, values[10])  # Membership Expiry
+    status_entry.insert(0, values[11])  # Membership Status (Added missing field)
+    time_slots_entry.insert(0, values[12])  # Time Slots (Added missing field)
 
 
 # Update record
@@ -1049,7 +1171,7 @@ def update_record():
 	my_tree.item(selected, text="", values=(
 		id_entry.get(), n_entry.get(), age_entry.get(), address_entry.get(), email_entry.get(),
 		phone_entry.get(), join_date_entry.get(), membership_entry.get(),amount_entry.get(), amount_due_entry.get(),
-		expiry_entry.get(), status_entry.get()
+		expiry_entry.get(), status_entry.get(), time_slots_entry.get()
 	))
 	# Update the database
 	# Create a database or connect to one that exists
@@ -1070,7 +1192,8 @@ def update_record():
         amount = :amount,
 		amount_due = :amount_due,
 		membership_expiry = :membership_expiry,
-		status = :status
+		status = :status,
+        time_slots = :time_slots
 		WHERE id = :id""",
 		{
 			'name': n_entry.get(),
@@ -1084,6 +1207,7 @@ def update_record():
             'amount_due': amount_due_entry.get(),
 			'membership_expiry': expiry_entry.get(),
 			'status': status_entry.get(),
+            'time_slots': time_slots_entry.get(),
 			'id': id_entry.get()
 		})
 
@@ -1109,9 +1233,9 @@ def add_record():
     c = conn.cursor()
 
     # Add New Record
-    c.execute("INSERT INTO customers (id, name, age, address, email, phone, join_date, membership_plan, amount_due, membership_expiry, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    c.execute("INSERT INTO customers (id, name, age, address, email, phone, join_date, membership_plan,amount , amount_due, membership_expiry, status, time_slots  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)",
               (id_entry.get(), n_entry.get(), age_entry.get(), address_entry.get(), email_entry.get(), phone_entry.get(),
-               join_date_entry.get(), membership_entry.get(), amount_entry.get(),amount_due_entry.get(), expiry_entry.get(), status_entry.get()))
+               join_date_entry.get(), membership_entry.get(), amount_entry.get(),amount_due_entry.get(), expiry_entry.get(), status_entry.get(), time_slots_entry.get()))
 
     # Commit changes and close connection
     conn.commit()
@@ -1145,14 +1269,13 @@ def create_table_again():
         amount REAL,
         amount_due REAL,
         membership_expiry TEXT,
-        status TEXT
+        status TEXT,
+        time_slots TEXT
     )''')
 
     # Commit and close
     conn.commit()
     conn.close()
-
-
 
 # Fetch Data from Database
 def fetch_customer_details(customer_name):
@@ -1164,7 +1287,7 @@ def fetch_customer_details(customer_name):
     gym_name, gym_address = gym_data if gym_data else ("My Gym", "No Address Available")
     
     cursor.execute("""
-        SELECT id, name, phone, join_date, membership_expiry, amount 
+        SELECT id, name, phone, join_date, membership_expiry, amount , time_slots
         FROM customers WHERE name LIKE ? LIMIT 1
     """, (f"%{customer_name}%",))
     customer_data = cursor.fetchone()
@@ -1181,6 +1304,7 @@ def fetch_customer_details(customer_name):
             "join_date": customer_data[3],
             "membership_expiry": customer_data[4],
             "amount": customer_data[5],
+            "time_slots": customer_data[6],
             "date": datetime.today().strftime("%Y-%m-%d")
         }
     return None
@@ -1212,7 +1336,7 @@ def generate_receipt(customer_name):
     # Drawing Gym Name & Logo
     drawing = Drawing(200, 50)
     drawing.add(create_dumbbell())
-    drawing.add(String(60, 120, data["gym_name"], fontName="Times", fontSize=16, fillColor=colors.black))
+    drawing.add(String(60, 120, data["gym_name"], fontName="Helvetica", fontSize=16, fillColor=colors.black))
     drawing.drawOn(c, 150, 650)
 
     # Separator Line
@@ -1221,7 +1345,7 @@ def generate_receipt(customer_name):
     c.line(50, 680, 550, 680)
 
     # Gym Address
-    c.setFont("Times", 12)
+    c.setFont("Helvetica", 12)
     c.drawString(180, 660, f"Address: {data['gym_address']}")
 
     # Receipt Details
@@ -1231,17 +1355,28 @@ def generate_receipt(customer_name):
     c.drawString(50, 590, f"Received with thanks from: {data['name']}")
     c.drawString(50, 560, f"Being fees for the gymnasium from {data['join_date']} to {data['membership_expiry']}")
     
-    c.setFont("Times-Bold", 14)
-    c.drawString(50, 520, f"Rs. {data['amount']}")
-
+    c.drawString(50, 530, f"Time Slot: {data['time_slots']}")  # Added Time Slot Label and Value
+    
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, 500, f"Rs. {data['amount']}")
+    
     # Signature Lines
-    c.setFont("Times", 12)
+    c.setFont("Helvetica", 12)
     c.line(50, 450, 200, 450)
     c.drawString(80, 435, "Member's Signature")
 
-    c.line(350, 450, 500, 450)
-    c.drawString(390, 435, "Sir's Signature")
+    # Draw Trainer's Signature (Shamim)
+    c.setFont("Helvetica", 12)
+    c.line(300, 450, 450, 450)
+    c.drawString(330, 435, "Trainer's Signature")
     
+    # Add Trainer's Signature Image
+    try:
+        c.drawImage(image_path, 320, 455, width=100, height=50, mask='auto')
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load signature image: {e}")
+
+    # Save the PDF
     c.save()
     messagebox.showinfo("Success", f"Receipt saved at: {receipt_path}")
 
@@ -1256,38 +1391,9 @@ def generate_receipt_ui():
     customer_name = values[1]  # Assuming Name is the second column
     generate_receipt(customer_name)
 
-def show_pie_chart():
-    """Fetch data from the database and display a pie chart of active vs expired members."""
-    
-    # Connect to the database
-    conn = sqlite3.connect("gym.db")  # Change to your database name
-    cursor = conn.cursor()
 
-    # Count expired and active members
-    cursor.execute("SELECT COUNT(*) FROM customers WHERE status='Expired'")
-    expired_count = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM customers WHERE status='Active'")
-    active_count = cursor.fetchone()[0]
 
-    conn.close()  # Close the database connection
-
-    # Data for the pie chart
-    labels = ["Expired Memberships", "Active Memberships"]
-    sizes = [expired_count, active_count]
-    colors = ["#FF6666", "#66B266"]  # Red for expired, Green for active
-    explode = (0.1, 0)  # Slightly separate expired slice for emphasis
-
-    # Create Pie Chart
-    plt.figure(figsize=(6, 6))
-    plt.pie(sizes, labels=labels, autopct="%1.1f%%", colors=colors, explode=explode, startangle=90, shadow=True)
-    plt.title("Membership Status Distribution")
-    
-    # Show chart
-    plt.show()
-
-# Adding "Show Reports" button to menu
-my_menu.add_command(label="Show Reports", command=show_pie_chart)
 
 # Add Buttons
 button_frame = LabelFrame(root, text="Commands")
